@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sems.message">
+  <select id="selectSendedMessages" resultType="Message">
+    <!-- messageMapper.xml - selectSendedMessages -->
+    select tr_num as id
+          ,"SMS" as msgType
+          ,'' as subject
+          ,tr_msg as msg
+          ,tr_phone as phone
+          ,tr_callback as callback
+          ,tr_msgtype as type
+          ,tr_sendstat as status
+          ,tr_senddate as sendDate
+          ,tr_rsltdate as rsltDate
+          ,tr_etc1 as etc1
+          ,tr_etc2 as etc2
+          ,tr_etc3 as etc3
+      from SC_LOG_201810
+  </select>
+  
+  <insert id="insertSMS" parameterType="Message">
+    <!-- messageMapper.xml - insertSMS -->
+    insert into sc_tran(
+       tr_senddate
+      ,tr_phone
+      ,tr_callback
+      ,tr_msg)
+    values(
+      <choose>
+        <when test="sendDate != null">
+          #{sendDate,jdbcType=DATE}
+        </when>
+        <otherwise>
+          now()
+        </otherwise>
+      </choose>
+      ,#{phone}
+      ,#{callback}
+      ,#{msg}
+    )
+  </insert>
+  
+  <select id="selectActiveYn" resultType="String">
+    <!-- messageMapper.xml - selectActiveYn -->
+  	SELECT IFNULL(ACTIVE_YN, 'N') AS ACTIVE_YN
+	  FROM TB_FUNCTION
+	ORDER BY ACTIVE_DAY||ACTIVE_SEQ DESC LIMIT 1
+  </select>
+  
+  <select id="selectTargetCustomer" parameterType="hashmap" resultType="hashmap">
+  	<!-- messageMapper.xml - selectTargetCustomer -->
+  	<![CDATA[
+  	SELECT X.CUST_CD,
+	       X.CHECK_DAY, 
+	       X.CHECK_SEQ,
+	       X.CURR_CHECK_DAY,
+	       X.CYCLE,
+	       X.CUST_NM, 
+	       X.CUS_NAME, 
+	       X.CUS_HPNO,
+	       X.NEXT_CHECK_DAY,
+	       X.DIFF_DAY
+	  FROM (SELECT Z.CUST_CD,
+	               Z.CHECK_DAY, 
+	               Z.CHECK_SEQ,
+	               Z.CURR_CHECK_DAY,
+	               Z.CYCLE,
+	               Z.CUST_NM, 
+	               Z.CUS_NAME, 
+	               Z.CUS_HPNO,
+	               DATE_FORMAT(DATE_ADD(DATE(Z.CURR_CHECK_DAY), INTERVAL Z.CYCLE DAY), '%Y%m%d') AS NEXT_CHECK_DAY,
+	               DATEDIFF(DATE_ADD(DATE(Z.CURR_CHECK_DAY), INTERVAL Z.CYCLE DAY), NOW()) AS DIFF_DAY
+	          FROM (SELECT A.CUST_CD, MAX(B.CHECK_DAY) AS CURR_CHECK_DAY, A.CYCLE, B.CHECK_DAY, B.CHECK_SEQ, A.CUST_NM, A.CUS_NAME, A.CUS_HPNO
+	                  FROM TB_CUST01 A, TB_CHECK01 B
+	                 WHERE A.CUST_CD = B.CUST_CD
+	                GROUP BY A.CUST_CD ) Z
+	        ) X
+	 WHERE ((X.CUST_CD, X.NEXT_CHECK_DAY, X.CHECK_SEQ) NOT IN (SELECT CUST_CD, CHECK_DAY, CHECK_SEQ
+	                                                             FROM TB_SEND01))
+	   AND DATEDIFF(DATE_ADD(DATE(X.CURR_CHECK_DAY), INTERVAL X.CYCLE DAY), NOW()) <= 3
+	   ]]>
+  </select>
+  
+  
+</mapper>

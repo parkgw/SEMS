@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sems.cust">
+  <resultMap type="sems.model.User" id="userMap">
+    <id column="id" property="id" />
+    <result column="pwd" property="pwd" />
+    <result column="name" property="name" />
+    <result column="jw" property="jw" />
+    <result column="auth" property="auth" />
+  </resultMap>
+  
+  <resultMap type="sems.model.Cust" id="custMap">
+    <id column="cust_cd" property="custCd" />
+    <result column="cust_nm" property="custNm" />
+    <result column="cus_name" property="cusName" />
+    <result column="cus_tel" property="cusTel" />
+    <result column="cus_hpno" property="cusHp" />
+    <result column="cycle" property="cycle" />
+    <result column="use_yn" property="useYn" />
+  </resultMap>
+  
+  <select id="selectUser" parameterType="String" resultMap="userMap">
+    /* custMapper.xml - selectCust */
+    SELECT ID
+          ,PWD
+          ,NAME
+          ,JW
+          ,AUTH
+      FROM TB_CSM01
+     WHERE ID = #{username}
+  </select>
+  
+  <update id="updateUserInfo" parameterType="ProfileForm">
+    /* custMapper.xml - updateCustInfo */
+    UPDATE TB_CSM01
+       SET JW = #{jw}
+          ,AUTH = #{auth}
+    <if test="newPasswd != null and newPasswd != ''">
+          ,PWD = #{newPasswd} 
+    </if>
+     WHERE ID = #{userid}
+  </update>
+  
+  <select id="selectCustList" resultMap="custMap">
+    /* custMapper.xml - selectCustList */
+    SELECT CUST_CD
+          ,CUST_NM
+          ,CUS_NAME
+          ,CUS_TEL
+          ,CUS_HPNO
+          ,CYCLE
+          ,CASE WHEN USE_YN = 'N' THEN 0 ELSE 1 END AS USE_YN
+      FROM TB_CUST01
+     ORDER BY USE_YN
+  </select>
+  
+  <insert id="insertCust" parameterType="Cust">
+    <selectKey keyProperty="custCd" resultType="long" order="BEFORE">
+      SELECT MAX(CUST_CD) + 1 FROM TB_CUST01
+    </selectKey>
+    
+    /* custMapper.xml - insertCust */
+    INSERT INTO TB_CUST01(
+      CUST_CD
+     ,CUST_NM 
+     ,CUS_NAME 
+     ,CUS_TEL 
+     ,CUS_HPNO 
+     ,CYCLE
+     ,USE_YN
+     ,INPUT_DAY
+     ,INPUT_ID)
+    VALUES(
+      #{custCd}
+     ,#{custNm}
+     ,#{cusName}
+     ,#{cusTel}
+     ,#{cusHp}
+     ,#{cycle}
+     <choose>
+       <when test="useYn == true">
+     ,'Y'
+       </when>
+       <otherwise>
+     ,'N'
+       </otherwise>
+     </choose>
+     ,now()
+     ,#{inputId}
+    )
+  </insert>
+  
+  <update id="updateCust" parameterType="Cust">
+    /* custMapper.xml - updateCust */
+    UPDATE TB_CUST01
+       SET CUST_NM = #{custNm}
+          ,CUS_NAME = #{cusName}
+          ,CUS_TEL = #{cusTel}
+          ,CUS_HPNO = #{cusHp}
+          ,CYCLE = #{cycle}
+          <choose>
+            <when test="useYn == true">
+          ,USE_YN = 'Y'
+            </when>
+            <otherwise>
+          ,USE_YN = 'N'
+            </otherwise>
+          </choose>
+          ,UPDATE_DAY = now()
+          ,UPDATE_ID = #{updateId}
+     WHERE CUST_CD = #{custCd}
+  </update>
+</mapper>

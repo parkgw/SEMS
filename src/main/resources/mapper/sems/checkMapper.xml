@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sems.check">
+  
+  <resultMap type="sems.model.Cust" id="checkMap">
+    <id column="check_day" property="custCd" />
+    <id column="check_seq" property="custCd" />
+    <result column="cust_cd" property="custNm" />
+    <result column="cus_name" property="cusName" />
+    <result column="cus_hpno" property="cusHp" />
+    <result column="conf_day" property="confDay" />
+    <result column="conf_nm" property="confName" />
+  </resultMap>
+  
+  
+  <select id="selectCheckList" resultMap="checkMap">
+    /* checkMapper.xml - selectCheckList */
+    SELECT CHECK_DAY,
+	       CHECK_SEQ,
+	       CUST_CD,
+	       CUS_NAME,
+	       CUS_HPNO,
+	       COALESCE(UPDATE_DAY, INPUT_DAY) AS CONF_DAY, 
+	       (SELECT NAME FROM TB_CSM01 WHERE ID = COALESCE(UPDATE_ID, INPUT_ID)) AS CONF_NM
+  	  FROM TB_CHECK01
+  	ORDER BY CHECK_DAY DESC, CHECK_SEQ DESC
+  </select>
+  
+  <insert id="insertCust" parameterType="Cust">
+    <selectKey keyProperty="custCd" resultType="long" order="BEFORE">
+      SELECT MAX(CUST_CD) + 1 FROM TB_CUST01
+    </selectKey>
+    
+    /* custMapper.xml - insertCust */
+    INSERT INTO TB_CUST01(
+      CUST_CD
+     ,CUST_NM 
+     ,CUS_NAME 
+     ,CUS_TEL 
+     ,CUS_HPNO 
+     ,CYCLE
+     ,USE_YN
+     ,INPUT_DAY
+     ,INPUT_ID)
+    VALUES(
+      #{custCd}
+     ,#{custNm}
+     ,#{cusName}
+     ,#{cusTel}
+     ,#{cusHp}
+     ,#{cycle}
+     <choose>
+       <when test="useYn == true">
+     ,'Y'
+       </when>
+       <otherwise>
+     ,'N'
+       </otherwise>
+     </choose>
+     ,now()
+     ,#{inputId}
+    )
+  </insert>
+  
+  <update id="updateCust" parameterType="Cust">
+    /* custMapper.xml - updateCust */
+    UPDATE TB_CUST01
+       SET CUST_NM = #{custNm}
+          ,CUS_NAME = #{cusName}
+          ,CUS_TEL = #{cusTel}
+          ,CUS_HPNO = #{cusHp}
+          ,CYCLE = #{cycle}
+          <choose>
+            <when test="useYn == true">
+          ,USE_YN = 'Y'
+            </when>
+            <otherwise>
+          ,USE_YN = 'N'
+            </otherwise>
+          </choose>
+          ,UPDATE_DAY = now()
+          ,UPDATE_ID = #{updateId}
+     WHERE CUST_CD = #{custCd}
+  </update>
+</mapper>

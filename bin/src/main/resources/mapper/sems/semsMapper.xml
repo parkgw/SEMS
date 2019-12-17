@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sems">
+  <select id="selectAutoFuncStatus" resultType="hashmap">
+    <!-- semsMapper.xml - selectAutoFuncStatus -->
+    select active_day
+          ,active_seq
+          ,active_yn
+          ,input_day
+          ,input_id
+      from tb_autofunc
+     where input_day = (select max(input_day) from tb_autofunc)
+  </select>
+</mapper>
